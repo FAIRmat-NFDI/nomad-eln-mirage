@@ -1,3 +1,7 @@
 data:
-  m_def: nomad_eln_mirage.schema_packages.schema_package.NewSchemaPackage
-  name: Markus
+  m_def: nomad_eln_mirage.schema_packages.eln_mirage.ELNMirage
+  bool_plain: true
+  int_plain: 42
+  float_plain: 6.28
+  string_plain: peace
+  datetime_plain: '2026-04-01T12:34:56'

@@ -31,7 +31,7 @@ class ELNMirage(EntryData):
 
     bool_plain = Quantity(type=bool, description='A boolean')
     int_plain = Quantity(type=int, description='An integer')
-    float_plain = Quantity(type=int, description='A float')
+    float_plain = Quantity(type=float, description='A float')
     string_plain = Quantity(type=str, description='A string')
     datetime_plain = Quantity(type=Datetime, description='A datetime')
 
