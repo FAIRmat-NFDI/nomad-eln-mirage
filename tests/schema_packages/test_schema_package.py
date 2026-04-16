@@ -26,7 +26,7 @@ def get_archive(filename):
         pytest.param(
             'empty.archive.yaml',
             {
-                'plain_bool': False,
+                'plain_bool': True,
                 'plain_int': 12,
                 'plain_float': 2.718,
                 'plain_str': 'foobar',

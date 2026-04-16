@@ -1,4 +1,3 @@
 data:
   m_def: nomad_eln_mirage.schema_packages.eln_mirage.ELNMirage
-  plain_quantities:
-    plain_bool: false
+  plain_quantities: {}
