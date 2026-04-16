@@ -1,4 +1,3 @@
-import datetime
 import os.path
 
 import pytest
@@ -15,9 +14,6 @@ from nomad.client import normalize_all, parse
                 'plain_int': 42,
                 'plain_float': 6.28,
                 'plain_str': 'peace',
-                'plain_datetime': datetime.datetime(
-                    2026, 4, 1, 12, 34, 56, tzinfo=datetime.timezone.utc
-                ),
             },
         ),
         pytest.param(
@@ -27,9 +23,6 @@ from nomad.client import normalize_all, parse
                 'plain_int': 12,
                 'plain_float': 2.718,
                 'plain_str': 'foobar',
-                'plain_datetime': datetime.datetime(
-                    2020, 2, 20, 20, 20, 20, tzinfo=datetime.timezone.utc
-                ),
             },
         ),
     ],

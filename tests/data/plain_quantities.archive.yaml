@@ -5,4 +5,3 @@ data:
     plain_int: 42
     plain_float: 6.28
     plain_str: peace
-    plain_datetime: '2026-04-01T12:34:56'
