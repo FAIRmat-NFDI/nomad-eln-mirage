@@ -45,7 +45,16 @@ def test_plain_quantities(filename: str, expected: dict):
 @pytest.mark.parametrize(
     'filename,expected',
     [
-        pytest.param('edit_quantities.archive.yaml', {'edit_str': 'rainbow'}),
+        pytest.param(
+            'edit_quantities.archive.yaml',
+            {
+                'edit_bool': True,
+                'edit_number_int': 64,
+                'edit_number_float': 1.23,
+                'edit_str': 'rainbow',
+                'edit_url': 'https://example.com/path/to/file',
+            },
+        ),
     ],
 )
 def test_edit_quantities(filename: str, expected: dict):

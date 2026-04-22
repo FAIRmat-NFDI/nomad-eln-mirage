@@ -41,9 +41,24 @@ class ELNMirage(EntryData):
 
     plain_quantities = SubSection(section_def=ELNMiragePlainQuantities)
 
+    edit_bool = Quantity(
+        type=bool, description='Edit boolean', a_eln={'component': 'BoolEditQuantity'}
+    )
+    edit_number_int = Quantity(
+        type=int,
+        description='Edit integer number',
+        a_eln={'component': 'NumberEditQuantity'},
+    )
+    edit_number_float = Quantity(
+        type=float,
+        description='Edit float number',
+        a_eln={'component': 'NumberEditQuantity'},
+    )
     edit_str = Quantity(
         type=str, description='Edit string', a_eln={'component': 'StringEditQuantity'}
     )
-
+    edit_url = Quantity(
+        type=str, description='Edit URL', a_eln={'component': 'URLEditQuantity'}
+    )
 
 m_package.__init_metainfo__()

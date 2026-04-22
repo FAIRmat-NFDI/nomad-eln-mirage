@@ -1,3 +1,7 @@
 data:
   m_def: nomad_eln_mirage.schema_packages.eln_mirage.ELNMirage
+  edit_bool: True
+  edit_number_int: 64
+  edit_number_float: 1.23
   edit_str: 'rainbow'
+  edit_url: 'https://example.com/path/to/file'
