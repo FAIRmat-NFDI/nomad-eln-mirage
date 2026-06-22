@@ -17,8 +17,16 @@
 #
 
 
-from nomad.datamodel.data import EntryData
-from nomad.metainfo import MEnum, Package, Quantity, Section, SubSection
+from nomad.datamodel.data import Author, EntryData, User
+from nomad.metainfo import (
+    Datetime,
+    MEnum,
+    Package,
+    Quantity,
+    Reference,
+    Section,
+    SubSection,
+)
 
 m_package = Package(name='ELN Mirage')
 
@@ -98,5 +106,41 @@ class ELNMirage(EntryData):
         description='Edit slider',
         a_eln={'component': 'SliderEditQuantity', 'minValue': 0, 'maxValue': 10},
     )
+    edit_autocomplete = Quantity(
+        type=MEnum('Apple', 'Banana', 'Cherry', 'Date', 'Elderberry'),
+        description='Edit autocomplete',
+        a_eln={'component': 'AutocompleteEditQuantity'},
+    )
+    edit_datetime = Quantity(
+        type=Datetime,
+        description='Edit datetime',
+        a_eln={'component': 'DateTimeEditQuantity'},
+    )
+    edit_rich_text = Quantity(
+        type=str,
+        description='Edit rich text',
+        a_eln={'component': 'RichTextEditQuantity'},
+    )
+    edit_reference = Quantity(
+        type=Reference(ELNMiragePlainQuantities.m_def),
+        description='Edit reference',
+        a_eln={'component': 'ReferenceEditQuantity'},
+    )
+    edit_file = Quantity(
+        type=str,
+        description='Edit file',
+        a_eln={'component': 'FileEditQuantity'},
+    )
+    edit_user = Quantity(
+        type=User,
+        description='Edit user',
+        a_eln={'component': 'AuthorEditQuantity'},
+    )
+    edit_author = Quantity(
+        type=Author,
+        description='Edit author',
+        a_eln={'component': 'AuthorEditQuantity'},
+    )
+
 
 m_package.__init_metainfo__()

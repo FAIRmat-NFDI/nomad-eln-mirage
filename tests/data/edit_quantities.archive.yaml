@@ -8,3 +8,7 @@ data:
   edit_enum: 'Option 5'
   edit_radio_enum: 'Green'
   edit_slider: 7.0
+  edit_autocomplete: 'Banana'
+  edit_datetime: '2026-06-22T10:30:00+00:00'
+  edit_rich_text: '<p>Hello rich text</p>'
+  edit_file: 'mirage.txt'
