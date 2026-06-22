@@ -18,7 +18,7 @@
 
 
 from nomad.datamodel.data import EntryData
-from nomad.metainfo import Package, Quantity, Section, SubSection
+from nomad.metainfo import MEnum, Package, Quantity, Section, SubSection
 
 m_package = Package(name='ELN Mirage')
 
@@ -71,6 +71,32 @@ class ELNMirage(EntryData):
     )
     edit_url = Quantity(
         type=str, description='Edit URL', a_eln={'component': 'URLEditQuantity'}
+    )
+    edit_enum = Quantity(
+        # More than 8 options so the gui renders a select/combobox rather than radios.
+        type=MEnum(
+            'Option 1',
+            'Option 2',
+            'Option 3',
+            'Option 4',
+            'Option 5',
+            'Option 6',
+            'Option 7',
+            'Option 8',
+            'Option 9',
+        ),
+        description='Edit enum',
+        a_eln={'component': 'EnumEditQuantity'},
+    )
+    edit_radio_enum = Quantity(
+        type=MEnum('Red', 'Green', 'Blue'),
+        description='Edit radio enum',
+        a_eln={'component': 'RadioEnumEditQuantity'},
+    )
+    edit_slider = Quantity(
+        type=float,
+        description='Edit slider',
+        a_eln={'component': 'SliderEditQuantity', 'minValue': 0, 'maxValue': 10},
     )
 
 m_package.__init_metainfo__()
