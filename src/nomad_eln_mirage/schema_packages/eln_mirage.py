@@ -78,6 +78,17 @@ class ELNMirage(EntryData):
     edit_str = Quantity(
         type=str, description='Edit string', a_eln={'component': 'StringEditQuantity'}
     )
+    edit_required = Quantity(
+        type=str,
+        required=True,
+        description='Edit required string',
+        a_eln={'component': 'StringEditQuantity'},
+    )
+    edit_required_eln = Quantity(
+        type=str,
+        description='Edit required string from ELN annotation',
+        a_eln={'component': 'StringEditQuantity', 'required': True},
+    )
     edit_url = Quantity(
         type=str, description='Edit URL', a_eln={'component': 'URLEditQuantity'}
     )
