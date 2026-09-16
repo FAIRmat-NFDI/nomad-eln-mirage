@@ -18,6 +18,7 @@
 
 
 from nomad.datamodel.data import Author, EntryData, User
+from nomad.datamodel.hdf5 import HDF5Reference
 from nomad.metainfo import (
     Datetime,
     MEnum,
@@ -130,6 +131,11 @@ class ELNMirage(EntryData):
         type=str,
         description='Edit file',
         a_eln={'component': 'FileEditQuantity'},
+    )
+    edit_hdf5_reference = Quantity(
+        # HDF5Reference quantities are editable in the gui without an eln annotation.
+        type=HDF5Reference,
+        description='Edit HDF5 reference',
     )
     edit_user = Quantity(
         type=User,
