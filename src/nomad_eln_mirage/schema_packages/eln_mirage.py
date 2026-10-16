@@ -19,6 +19,7 @@
 
 from nomad.datamodel.data import Author, EntryData, User
 from nomad.datamodel.hdf5 import HDF5Reference
+from nomad.datamodel.metainfo.basesections import BaseSection
 from nomad.metainfo import (
     Datetime,
     MEnum,
@@ -39,6 +40,24 @@ class ELNMiragePlainQuantities(EntryData):
     plain_int = Quantity(type=int, description='Plain integer', default=12)
     plain_float = Quantity(type=float, description='Plain float', default=2.718)
     plain_str = Quantity(type=str, description='Plain string', default='foobar')
+
+
+class ELNMirageLabeledSection(EntryData):
+    m_def = Section(label_quantity='title')
+
+    title = Quantity(
+        type=str,
+        description='Label shown by section references',
+        a_eln={'component': 'StringEditQuantity'},
+    )
+
+
+class ELNMirageNamedSection(BaseSection, EntryData):
+    """
+    Has no label quantity, the label falls back to the name inherited from BaseSection.
+    """
+
+    m_def = Section()
 
 
 class ELNMirage(EntryData):
@@ -137,6 +156,16 @@ class ELNMirage(EntryData):
         type=Reference(ELNMiragePlainQuantities.m_def),
         description='Edit reference',
         a_eln={'component': 'ReferenceEditQuantity'},
+    )
+    edit_section_label_reference = Quantity(
+        type=Reference(ELNMirageLabeledSection.m_def),
+        description='Edit reference that shows the section label',
+        a_eln={'component': 'ReferenceEditQuantity', 'showSectionLabel': True},
+    )
+    edit_entry_data_reference = Quantity(
+        type=Reference(EntryData.m_def),
+        description='Edit reference to any entry that shows the section label',
+        a_eln={'component': 'ReferenceEditQuantity', 'showSectionLabel': True},
     )
     edit_file = Quantity(
         type=str,
