@@ -108,51 +108,6 @@ Read the [NOMAD plugin documentation](https://nomad-lab.eu/prod/v1/staging/docs/
 
 We now recommend using the dedicated [`nomad-distro-dev`](https://github.com/FAIRmat-NFDI/nomad-distro-dev) repository to simplify the process. Please refer to that repository for detailed instructions.
 
-## Generated plot gallery
-
-The `ELNMiragePlot` schema generates synthetic data and 14 Plotly figures during
-processing. Restart your local NOMAD backend after installing or changing the schema.
-Create an entry using **ELN Mirage Plot**, or upload
-[`tests/data/generated_plot.archive.yaml`](tests/data/generated_plot.archive.yaml).
-
-Processing creates the `x` and `signal` arrays and a figure named **Generated sine
-wave**, plus a cosine signal and a 2D wave grid for the other plots. Open the
-entry's plot view or the ELN plot selector to browse the gallery. Edit `amplitude`,
-`cycles`, or `number_of_points` in the ELN and save/process the entry to regenerate the data and
-plot. Generated arrays are replaced on every processing run. An entry without
-explicit parameters uses amplitude 1, two cycles, and 201 samples.
-The sine wave shows each generated sample as a marker, and its title includes the
-sample count. Changing the sample count changes the sampling density; amplitude and cycles
-control the wave's height and number of oscillations.
-
-The gallery demonstrates all four Python definition approaches supported by this
-example. It covers common chart types; Plotly supports further trace types and
-combinations that can be added using the same patterns.
-
-| Python definition | Gallery examples |
-| --- | --- |
-| `Section(a_plotly_graph_object=[...])` | Line with markers, colored scatter, bar, filled area, histogram, box, violin, heatmap, contour |
-| `Section(a_plotly_express=[...])` | Colored scatter, multiple line traces |
-| `Section(a_plotly_subplots=[...])` | Side-by-side line and scatter plots |
-| `PlotlyFigure` appended during `normalize()` | Polar plot, two traces with separate y axes |
-
-See `ELNMiragePlot` in
-[`eln_mirage.py`](src/nomad_eln_mirage/schema_packages/eln_mirage.py) for the
-definitions. Graph-object annotations use references such as `#signal`, resolved
-by the GUI. Express and subplot annotations build their figures during processing.
-The `_add_python_figures()` method shows how to use Plotly's Python API directly.
-All figures are replaced when reprocessing, so repeated processing does not add
-duplicates. The 2D grid uses `min(number_of_points, 41)` samples per axis to keep
-matrix plots small; their titles show the actual grid dimensions.
-The gallery uses 2D plots without WebGL. Express scatter traces are converted to
-SVG scatter traces even when large sample counts would select WebGL automatically.
-
-From the `nomad-distro-dev` root, run the plugin tests with:
-
-```sh
-uv run --directory packages/nomad-eln-mirage pytest tests -q
-```
-
 ## Publish note
 In the [GitHub actions workflow](./.github/workflows/publish.yml) for publishing the nomad-eln-mirage plugin to PyPI, we commented out the `deploy` job . If you want to publish the plugin to `PyPI`, you need to set up your project in `PyPI`. There are several online tutorials on publishing a Python package to PyPI, e.g., [How to Publish a Python Package to PyPI](https://realpython.com/pypi-publish-python-package/). After that, you can uncomment the `deploy` job in the workflow file and push the changes to GitHub. The workflow will be triggered and the package will be published to `PyPI` when you create a new release on GitHub.
 
