@@ -21,7 +21,7 @@ import numpy as np
 from nomad.datamodel.data import Author, EntryData, User
 from nomad.datamodel.hdf5 import HDF5Reference
 from nomad.datamodel.metainfo.basesections import BaseSection
-from nomad.datamodel.metainfo.plot import PlotSection
+from nomad.datamodel.metainfo.plot import PlotlyFigure, PlotSection
 from nomad.metainfo import (
     Datetime,
     MEnum,
@@ -36,6 +36,7 @@ m_package = Package(name='ELN Mirage')
 
 MIN_PLOT_POINTS = 2
 MAX_PLOT_POINTS = 10000
+MAX_GRID_POINTS = 41
 
 
 class ELNMiragePlainQuantities(EntryData):
@@ -195,7 +196,7 @@ class ELNMirage(EntryData):
 
 
 class ELNMiragePlot(PlotSection, EntryData):
-    """Generate a sine wave and its plot whenever the entry is processed."""
+    """Generate a gallery demonstrating Python-defined plots during processing."""
 
     m_def = Section(
         label='ELN Mirage Plot',
@@ -214,7 +215,98 @@ class ELNMiragePlot(PlotSection, EntryData):
                     'xaxis': {'title': {'text': 'Normalized position'}},
                     'yaxis': {'title': {'text': 'Signal'}},
                 },
-            }
+            },
+            {
+                'label': 'Scatter with color',
+                'data': {
+                    'type': 'scatter',
+                    'mode': 'markers',
+                    'x': '#x',
+                    'y': '#signal',
+                    'marker': {
+                        'color': '#cosine',
+                        'colorscale': 'Viridis',
+                        'showscale': True,
+                    },
+                },
+            },
+            {
+                'label': 'Bar chart',
+                'data': {'type': 'bar', 'x': '#x', 'y': '#signal'},
+            },
+            {
+                'label': 'Filled area',
+                'data': {
+                    'type': 'scatter',
+                    'mode': 'lines',
+                    'x': '#x',
+                    'y': '#signal',
+                    'fill': 'tozeroy',
+                },
+            },
+            {
+                'label': 'Histogram',
+                'data': {'type': 'histogram', 'x': '#signal', 'nbinsx': 20},
+            },
+            {
+                'label': 'Box plot',
+                'data': {'type': 'box', 'y': '#signal', 'boxpoints': 'all'},
+            },
+            {
+                'label': 'Violin plot',
+                'data': {
+                    'type': 'violin',
+                    'y': '#signal',
+                    'box': {'visible': True},
+                    'points': 'all',
+                },
+            },
+            {
+                'label': 'Heatmap',
+                'data': {
+                    'type': 'heatmap',
+                    'x': '#grid_axis',
+                    'y': '#grid_axis',
+                    'z': '#wave_grid',
+                    'colorscale': 'Viridis',
+                },
+            },
+            {
+                'label': 'Contour',
+                'data': {
+                    'type': 'contour',
+                    'x': '#grid_axis',
+                    'y': '#grid_axis',
+                    'z': '#wave_grid',
+                    'colorscale': 'Viridis',
+                },
+            },
+        ],
+        a_plotly_express=[
+            {
+                'label': 'Express scatter',
+                'method': 'scatter',
+                'x': '#x',
+                'y': '#signal',
+                'color': '#cosine',
+            },
+            {
+                'label': 'Express multiple traces',
+                'method': 'line',
+                'x': '#x',
+                'y': '#signal',
+                'traces': [{'method': 'line', 'x': '#x', 'y': '#cosine'}],
+            },
+        ],
+        a_plotly_subplots=[
+            {
+                'label': 'Annotated subplots',
+                'parameters': {'rows': 1, 'cols': 2},
+                'plotly_express': [
+                    {'method': 'line', 'x': '#x', 'y': '#signal'},
+                    {'method': 'scatter', 'x': '#x', 'y': '#cosine'},
+                ],
+            },
         ],
     )
 
@@ -250,6 +342,21 @@ class ELNMiragePlot(PlotSection, EntryData):
         shape=['*'],
         description='Generated amplitude * sin(2 * pi * cycles * x).',
     )
+    cosine = Quantity(
+        type=np.float64,
+        shape=['*'],
+        description='Generated amplitude * cos(2 * pi * cycles * x).',
+    )
+    grid_axis = Quantity(
+        type=np.float64,
+        shape=['*'],
+        description='Positions for matrix plots, capped at 41 samples per axis.',
+    )
+    wave_grid = Quantity(
+        type=np.float64,
+        shape=['*', '*'],
+        description='Generated 2D sine/cosine product for heatmap and contour.',
+    )
 
     def normalize(self, archive, logger):
         if not MIN_PLOT_POINTS <= self.number_of_points <= MAX_PLOT_POINTS:
@@ -259,11 +366,78 @@ class ELNMiragePlot(PlotSection, EntryData):
 
         self.x = np.linspace(0.0, 1.0, self.number_of_points)
         self.signal = self.amplitude * np.sin(2 * np.pi * self.cycles * self.x)
+        self.cosine = self.amplitude * np.cos(2 * np.pi * self.cycles * self.x)
+        self.grid_axis = np.linspace(
+            0.0, 1.0, min(self.number_of_points, MAX_GRID_POINTS)
+        )
+        phase = 2 * np.pi * self.cycles * self.grid_axis
+        self.wave_grid = self.amplitude * np.outer(np.sin(phase), np.cos(phase))
 
         # Generate the figure after updating the referenced arrays.
         super().normalize(archive, logger)
-        self.figures[0].figure['layout']['title']['text'] = (
-            f'Generated sine wave ({self.number_of_points} samples)'
+        self._add_python_figures()
+        for index, figure in enumerate(self.figures):
+            figure.index = index
+            traces = figure.figure['data']
+            if isinstance(traces, dict):
+                traces = [traces]
+            # Express automatically selects WebGL for large datasets. These
+            # examples use scatter-compatible attributes, so force SVG traces.
+            for trace in traces:
+                if trace.get('type') == 'scattergl':
+                    trace['type'] = 'scatter'
+            if figure.label in ('Express multiple traces', 'Annotated subplots'):
+                for trace, name, color in zip(
+                    figure.figure['data'],
+                    ('Sine', 'Cosine'),
+                    ('steelblue', 'darkorange'),
+                ):
+                    trace['name'] = name
+                    trace['showlegend'] = True
+                    trace.setdefault('line', {})['color'] = color
+                    trace.setdefault('marker', {})['color'] = color
+            samples = f'{self.number_of_points} samples'
+            if figure.label in ('Heatmap', 'Contour'):
+                samples = f'{len(self.grid_axis)} x {len(self.grid_axis)} grid'
+            figure.figure.setdefault('layout', {})['title'] = {
+                'text': f'{figure.label} ({samples})'
+            }
+
+    def _add_python_figures(self):
+        """Build custom figures directly when annotations are too restrictive."""
+        import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
+
+        # Lists keep the archived payload readable as ordinary JSON arrays.
+        x = self.x.tolist()
+        signal = self.signal.tolist()
+        cosine = self.cosine.tolist()
+        polar = go.Figure(
+            go.Scatterpolar(
+                theta=(360 * self.x).tolist(),
+                r=np.abs(self.signal).tolist(),
+                mode='lines+markers',
+                name='Absolute signal',
+            )
+        )
+        self.figures.append(
+            PlotlyFigure(label='Python polar plot', figure=polar.to_plotly_json())
+        )
+
+        dual_axis = make_subplots(specs=[[{'secondary_y': True}]])
+        dual_axis.add_trace(
+            go.Scatter(x=x, y=signal, name='Sine', mode='lines+markers'),
+            secondary_y=False,
+        )
+        dual_axis.add_trace(
+            go.Scatter(x=x, y=cosine, name='Cosine', mode='lines+markers'),
+            secondary_y=True,
+        )
+        dual_axis.update_xaxes(title_text='Normalized position')
+        dual_axis.update_yaxes(title_text='Sine', secondary_y=False)
+        dual_axis.update_yaxes(title_text='Cosine', secondary_y=True)
+        self.figures.append(
+            PlotlyFigure(label='Python dual axes', figure=dual_axis.to_plotly_json())
         )
 
 
