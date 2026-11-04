@@ -17,9 +17,11 @@
 #
 
 
+import numpy as np
 from nomad.datamodel.data import Author, EntryData, User
 from nomad.datamodel.hdf5 import HDF5Reference
 from nomad.datamodel.metainfo.basesections import BaseSection
+from nomad.datamodel.metainfo.plot import PlotSection
 from nomad.metainfo import (
     Datetime,
     MEnum,
@@ -31,6 +33,9 @@ from nomad.metainfo import (
 )
 
 m_package = Package(name='ELN Mirage')
+
+MIN_PLOT_POINTS = 2
+MAX_PLOT_POINTS = 10000
 
 
 class ELNMiragePlainQuantities(EntryData):
@@ -187,6 +192,79 @@ class ELNMirage(EntryData):
         description='Edit author',
         a_eln={'component': 'AuthorEditQuantity'},
     )
+
+
+class ELNMiragePlot(PlotSection, EntryData):
+    """Generate a sine wave and its plot whenever the entry is processed."""
+
+    m_def = Section(
+        label='ELN Mirage Plot',
+        a_plotly_graph_object=[
+            {
+                'label': 'Generated sine wave',
+                'open': True,
+                'data': {
+                    'type': 'scatter',
+                    'mode': 'lines+markers',
+                    'x': '#x',
+                    'y': '#signal',
+                },
+                'layout': {
+                    'title': {'text': 'Generated sine wave'},
+                    'xaxis': {'title': {'text': 'Normalized position'}},
+                    'yaxis': {'title': {'text': 'Signal'}},
+                },
+            }
+        ],
+    )
+
+    amplitude = Quantity(
+        type=float,
+        default=1.0,
+        description='Amplitude of the generated sine wave.',
+        a_eln={'component': 'NumberEditQuantity'},
+    )
+    cycles = Quantity(
+        type=float,
+        default=2.0,
+        description='Number of sine wave cycles across the plotted interval.',
+        a_eln={'component': 'NumberEditQuantity'},
+    )
+    number_of_points = Quantity(
+        type=int,
+        default=201,
+        description='Number of generated samples, from 2 to 10000.',
+        a_eln={
+            'component': 'NumberEditQuantity',
+            'minValue': MIN_PLOT_POINTS,
+            'maxValue': MAX_PLOT_POINTS,
+        },
+    )
+    x = Quantity(
+        type=np.float64,
+        shape=['*'],
+        description='Generated positions from 0 to 1, regenerated during processing.',
+    )
+    signal = Quantity(
+        type=np.float64,
+        shape=['*'],
+        description='Generated amplitude * sin(2 * pi * cycles * x).',
+    )
+
+    def normalize(self, archive, logger):
+        if not MIN_PLOT_POINTS <= self.number_of_points <= MAX_PLOT_POINTS:
+            raise ValueError('number_of_points must be between 2 and 10000')
+        if not np.isfinite(self.amplitude) or not np.isfinite(self.cycles):
+            raise ValueError('amplitude and cycles must be finite')
+
+        self.x = np.linspace(0.0, 1.0, self.number_of_points)
+        self.signal = self.amplitude * np.sin(2 * np.pi * self.cycles * self.x)
+
+        # Generate the figure after updating the referenced arrays.
+        super().normalize(archive, logger)
+        self.figures[0].figure['layout']['title']['text'] = (
+            f'Generated sine wave ({self.number_of_points} samples)'
+        )
 
 
 m_package.__init_metainfo__()

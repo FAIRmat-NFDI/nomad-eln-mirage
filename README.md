@@ -108,6 +108,28 @@ Read the [NOMAD plugin documentation](https://nomad-lab.eu/prod/v1/staging/docs/
 
 We now recommend using the dedicated [`nomad-distro-dev`](https://github.com/FAIRmat-NFDI/nomad-distro-dev) repository to simplify the process. Please refer to that repository for detailed instructions.
 
+## Generated plot example
+
+The `ELNMiragePlot` schema generates a sine wave and a Plotly line plot during
+processing. Restart your local NOMAD backend after installing or changing the schema.
+Create an entry using **ELN Mirage Plot**, or upload
+[`tests/data/generated_plot.archive.yaml`](tests/data/generated_plot.archive.yaml).
+
+Processing creates the `x` and `signal` arrays and a figure named **Generated sine
+wave**. Open the entry's plot view to inspect it. Edit `amplitude`, `cycles`, or
+`number_of_points` in the ELN and save/process the entry to regenerate the data and
+plot. Generated arrays are replaced on every processing run. An entry without
+explicit parameters uses amplitude 1, two cycles, and 201 samples.
+Each generated sample is shown as a marker, and the plot title includes the sample
+count. Changing the sample count changes the sampling density; amplitude and cycles
+control the wave's height and number of oscillations.
+
+From the `nomad-distro-dev` root, run the plugin tests with:
+
+```sh
+uv run --directory packages/nomad-eln-mirage pytest tests -q
+```
+
 ## Publish note
 In the [GitHub actions workflow](./.github/workflows/publish.yml) for publishing the nomad-eln-mirage plugin to PyPI, we commented out the `deploy` job . If you want to publish the plugin to `PyPI`, you need to set up your project in `PyPI`. There are several online tutorials on publishing a Python package to PyPI, e.g., [How to Publish a Python Package to PyPI](https://realpython.com/pypi-publish-python-package/). After that, you can uncomment the `deploy` job in the workflow file and push the changes to GitHub. The workflow will be triggered and the package will be published to `PyPI` when you create a new release on GitHub.
 
