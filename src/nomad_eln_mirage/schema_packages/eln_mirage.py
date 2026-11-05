@@ -232,7 +232,12 @@ class ELNMiragePlot(PlotSection, EntryData):
             },
             {
                 'label': 'Bar chart',
-                'data': {'type': 'bar', 'x': '#x', 'y': '#signal'},
+                'data': {'type': 'bar', 'x': '#sample_labels', 'y': '#sample_counts'},
+                'layout': {
+                    'title': {'text': 'Measurements per sample'},
+                    'xaxis': {'title': {'text': 'Sample'}},
+                    'yaxis': {'title': {'text': 'Measurement count'}},
+                },
             },
             {
                 'label': 'Filled area',
@@ -347,6 +352,16 @@ class ELNMiragePlot(PlotSection, EntryData):
         shape=['*'],
         description='Generated amplitude * cos(2 * pi * cycles * x).',
     )
+    sample_labels = Quantity(
+        type=str,
+        shape=['*'],
+        description='Sample names for the categorical bar chart.',
+    )
+    sample_counts = Quantity(
+        type=int,
+        shape=['*'],
+        description='Example measurement counts for each sample.',
+    )
     grid_axis = Quantity(
         type=np.float64,
         shape=['*'],
@@ -367,6 +382,14 @@ class ELNMiragePlot(PlotSection, EntryData):
         self.x = np.linspace(0.0, 1.0, self.number_of_points)
         self.signal = self.amplitude * np.sin(2 * np.pi * self.cycles * self.x)
         self.cosine = self.amplitude * np.cos(2 * np.pi * self.cycles * self.x)
+        self.sample_labels = [
+            'Sample A',
+            'Sample B',
+            'Sample C',
+            'Sample D',
+            'Sample E',
+        ]
+        self.sample_counts = [12, 19, 8, 15, 23]
         self.grid_axis = np.linspace(
             0.0, 1.0, min(self.number_of_points, MAX_GRID_POINTS)
         )
