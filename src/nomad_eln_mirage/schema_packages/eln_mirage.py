@@ -21,7 +21,7 @@ import numpy as np
 from nomad.datamodel.data import Author, EntryData, User
 from nomad.datamodel.hdf5 import HDF5Reference
 from nomad.datamodel.metainfo.basesections import BaseSection
-from nomad.datamodel.metainfo.plot import PlotlyFigure, PlotSection
+from nomad.datamodel.metainfo.plot import PlotSection
 from nomad.metainfo import (
     Datetime,
     MEnum,
@@ -35,7 +35,7 @@ from nomad.metainfo import (
 m_package = Package(name='ELN Mirage')
 
 MIN_PLOT_POINTS = 2
-MAX_PLOT_POINTS = 10000
+MAX_PLOT_POINTS = 1000
 MAX_GRID_POINTS = 41
 
 
@@ -325,7 +325,7 @@ class ELNMiragePlot(PlotSection, EntryData):
     number_of_points = Quantity(
         type=int,
         default=201,
-        description='Number of generated samples, from 2 to 10000.',
+        description='Number of generated samples, from 2 to 1000.',
         a_eln={
             'component': 'NumberEditQuantity',
             'minValue': MIN_PLOT_POINTS,
@@ -360,7 +360,7 @@ class ELNMiragePlot(PlotSection, EntryData):
 
     def normalize(self, archive, logger):
         if not MIN_PLOT_POINTS <= self.number_of_points <= MAX_PLOT_POINTS:
-            raise ValueError('number_of_points must be between 2 and 10000')
+            raise ValueError('number_of_points must be between 2 and 1000')
         if not np.isfinite(self.amplitude) or not np.isfinite(self.cycles):
             raise ValueError('amplitude and cycles must be finite')
 
@@ -375,70 +375,6 @@ class ELNMiragePlot(PlotSection, EntryData):
 
         # Generate the figure after updating the referenced arrays.
         super().normalize(archive, logger)
-        self._add_python_figures()
-        for index, figure in enumerate(self.figures):
-            figure.index = index
-            traces = figure.figure['data']
-            if isinstance(traces, dict):
-                traces = [traces]
-            # Express automatically selects WebGL for large datasets. These
-            # examples use scatter-compatible attributes, so force SVG traces.
-            for trace in traces:
-                if trace.get('type') == 'scattergl':
-                    trace['type'] = 'scatter'
-            if figure.label in ('Express multiple traces', 'Annotated subplots'):
-                for trace, name, color in zip(
-                    figure.figure['data'],
-                    ('Sine', 'Cosine'),
-                    ('steelblue', 'darkorange'),
-                ):
-                    trace['name'] = name
-                    trace['showlegend'] = True
-                    trace.setdefault('line', {})['color'] = color
-                    trace.setdefault('marker', {})['color'] = color
-            samples = f'{self.number_of_points} samples'
-            if figure.label in ('Heatmap', 'Contour'):
-                samples = f'{len(self.grid_axis)} x {len(self.grid_axis)} grid'
-            figure.figure.setdefault('layout', {})['title'] = {
-                'text': f'{figure.label} ({samples})'
-            }
-
-    def _add_python_figures(self):
-        """Build custom figures directly when annotations are too restrictive."""
-        import plotly.graph_objects as go
-        from plotly.subplots import make_subplots
-
-        # Lists keep the archived payload readable as ordinary JSON arrays.
-        x = self.x.tolist()
-        signal = self.signal.tolist()
-        cosine = self.cosine.tolist()
-        polar = go.Figure(
-            go.Scatterpolar(
-                theta=(360 * self.x).tolist(),
-                r=np.abs(self.signal).tolist(),
-                mode='lines+markers',
-                name='Absolute signal',
-            )
-        )
-        self.figures.append(
-            PlotlyFigure(label='Python polar plot', figure=polar.to_plotly_json())
-        )
-
-        dual_axis = make_subplots(specs=[[{'secondary_y': True}]])
-        dual_axis.add_trace(
-            go.Scatter(x=x, y=signal, name='Sine', mode='lines+markers'),
-            secondary_y=False,
-        )
-        dual_axis.add_trace(
-            go.Scatter(x=x, y=cosine, name='Cosine', mode='lines+markers'),
-            secondary_y=True,
-        )
-        dual_axis.update_xaxes(title_text='Normalized position')
-        dual_axis.update_yaxes(title_text='Sine', secondary_y=False)
-        dual_axis.update_yaxes(title_text='Cosine', secondary_y=True)
-        self.figures.append(
-            PlotlyFigure(label='Python dual axes', figure=dual_axis.to_plotly_json())
-        )
 
 
 m_package.__init_metainfo__()

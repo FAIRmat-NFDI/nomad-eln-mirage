@@ -22,8 +22,6 @@ EXPECTED_PLOT_LABELS = [
     'Express scatter',
     'Express multiple traces',
     'Annotated subplots',
-    'Python polar plot',
-    'Python dual axes',
 ]
 
 
@@ -90,19 +88,10 @@ def test_reprocessing_saved_entry_with_twenty_points():
     assert_gallery_labels(data)
     figure = data.figures[0].figure
     assert figure['data']['mode'] == 'lines+markers'
-    assert figure['layout']['title']['text'] == 'Generated sine wave (20 samples)'
-    for item in data.figures:
-        suffix = (
-            '(20 x 20 grid)' if item.label in ('Heatmap', 'Contour') else '(20 samples)'
-        )
-        assert suffix in item.figure['layout']['title']['text']
-    polar = data.figures[-2].figure['data'][0]
-    assert len(polar['theta']) == len(polar['r']) == expected_points
-    for trace in data.figures[-1].figure['data']:
-        assert len(trace['x']) == len(trace['y']) == expected_points
+    assert figure['layout']['title']['text'] == 'Generated sine wave'
 
 
-@pytest.mark.parametrize('number_of_points', [2, 20, 201, 1001])
+@pytest.mark.parametrize('number_of_points', [2, 20, 201, 1000])
 def test_all_gallery_figures_are_valid_plotly(number_of_points):
     archive = EntryArchive(
         data=ELNMiragePlot(number_of_points=number_of_points), metadata=EntryMetadata()
@@ -122,15 +111,13 @@ def test_all_gallery_figures_are_valid_plotly(number_of_points):
             return [resolve(item) for item in value]
         return value
 
-    for index, item in enumerate(data.figures):
-        assert item.index == index
+    for item in data.figures:
         payload = resolve(item.figure)
         # A single graph-object annotation produces a dict; the GUI wraps it.
         if isinstance(payload['data'], dict):
             payload['data'] = [payload['data']]
         figure = Figure(payload)
         assert figure.data, item.label
-        # Include >1000 samples above to exercise Express's automatic WebGL choice.
         allowed_types = {
             'scatter',
             'bar',
@@ -153,23 +140,20 @@ def test_all_gallery_figures_are_valid_plotly(number_of_points):
     two_trace_plots = (
         'Express multiple traces',
         'Annotated subplots',
-        'Python dual axes',
     )
     for item in data.figures:
         if item.label in two_trace_plots:
             expected_traces = 2
             assert len(item.figure['data']) == expected_traces
-            assert [trace['name'] for trace in item.figure['data']] == [
-                'Sine',
-                'Cosine',
-            ]
+            np.testing.assert_allclose(item.figure['data'][0]['y'], data.signal)
+            np.testing.assert_allclose(item.figure['data'][1]['y'], data.cosine)
 
 
 @pytest.mark.parametrize(
     'parameters',
     [
         {'number_of_points': 1},
-        {'number_of_points': 10001},
+        {'number_of_points': 1001},
         {'amplitude': float('nan')},
         {'cycles': float('inf')},
     ],
