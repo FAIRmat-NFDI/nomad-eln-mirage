@@ -17,9 +17,11 @@
 #
 
 
+import numpy as np
 from nomad.datamodel.data import Author, EntryData, User
 from nomad.datamodel.hdf5 import HDF5Reference
 from nomad.datamodel.metainfo.basesections import BaseSection
+from nomad.datamodel.metainfo.plot import PlotSection
 from nomad.metainfo import (
     Datetime,
     MEnum,
@@ -31,6 +33,10 @@ from nomad.metainfo import (
 )
 
 m_package = Package(name='ELN Mirage')
+
+MIN_PLOT_POINTS = 2
+MAX_PLOT_POINTS = 1000
+MAX_GRID_POINTS = 41
 
 
 class ELNMiragePlainQuantities(EntryData):
@@ -187,6 +193,211 @@ class ELNMirage(EntryData):
         description='Edit author',
         a_eln={'component': 'AuthorEditQuantity'},
     )
+
+
+class ELNMiragePlot(PlotSection, EntryData):
+    """Generate a gallery demonstrating Python-defined plots during processing."""
+
+    m_def = Section(
+        label='ELN Mirage Plot',
+        a_plotly_graph_object=[
+            {
+                'label': 'Generated sine wave',
+                'open': True,
+                'data': {
+                    'type': 'scatter',
+                    'mode': 'lines+markers',
+                    'x': '#x',
+                    'y': '#signal',
+                },
+                'layout': {
+                    'title': {'text': 'Generated sine wave'},
+                    'xaxis': {'title': {'text': 'Normalized position'}},
+                    'yaxis': {'title': {'text': 'Signal'}},
+                },
+            },
+            {
+                'label': 'Scatter with color',
+                'data': {
+                    'type': 'scatter',
+                    'mode': 'markers',
+                    'x': '#x',
+                    'y': '#signal',
+                    'marker': {
+                        'color': '#cosine',
+                        'colorscale': 'Viridis',
+                        'showscale': True,
+                    },
+                },
+            },
+            {
+                'label': 'Bar chart',
+                'data': {'type': 'bar', 'x': '#sample_labels', 'y': '#sample_counts'},
+                'layout': {
+                    'title': {'text': 'Measurements per sample'},
+                    'xaxis': {'title': {'text': 'Sample'}},
+                    'yaxis': {'title': {'text': 'Measurement count'}},
+                },
+            },
+            {
+                'label': 'Filled area',
+                'data': {
+                    'type': 'scatter',
+                    'mode': 'lines',
+                    'x': '#x',
+                    'y': '#signal',
+                    'fill': 'tozeroy',
+                },
+            },
+            {
+                'label': 'Histogram',
+                'data': {'type': 'histogram', 'x': '#signal', 'nbinsx': 20},
+            },
+            {
+                'label': 'Box plot',
+                'data': {'type': 'box', 'y': '#signal', 'boxpoints': 'all'},
+            },
+            {
+                'label': 'Violin plot',
+                'data': {
+                    'type': 'violin',
+                    'y': '#signal',
+                    'box': {'visible': True},
+                    'points': 'all',
+                },
+            },
+            {
+                'label': 'Heatmap',
+                'data': {
+                    'type': 'heatmap',
+                    'x': '#grid_axis',
+                    'y': '#grid_axis',
+                    'z': '#wave_grid',
+                    'colorscale': 'Viridis',
+                },
+            },
+            {
+                'label': 'Contour',
+                'data': {
+                    'type': 'contour',
+                    'x': '#grid_axis',
+                    'y': '#grid_axis',
+                    'z': '#wave_grid',
+                    'colorscale': 'Viridis',
+                },
+            },
+        ],
+        a_plotly_express=[
+            {
+                'label': 'Express scatter',
+                'method': 'scatter',
+                'x': '#x',
+                'y': '#signal',
+                'color': '#cosine',
+            },
+            {
+                'label': 'Express multiple traces',
+                'method': 'line',
+                'x': '#x',
+                'y': '#signal',
+                'traces': [{'method': 'line', 'x': '#x', 'y': '#cosine'}],
+            },
+        ],
+        a_plotly_subplots=[
+            {
+                'label': 'Annotated subplots',
+                'parameters': {'rows': 1, 'cols': 2},
+                'plotly_express': [
+                    {'method': 'line', 'x': '#x', 'y': '#signal'},
+                    {'method': 'scatter', 'x': '#x', 'y': '#cosine'},
+                ],
+            },
+        ],
+    )
+
+    amplitude = Quantity(
+        type=float,
+        default=1.0,
+        description='Amplitude of the generated sine wave.',
+        a_eln={'component': 'NumberEditQuantity'},
+    )
+    cycles = Quantity(
+        type=float,
+        default=2.0,
+        description='Number of sine wave cycles across the plotted interval.',
+        a_eln={'component': 'NumberEditQuantity'},
+    )
+    number_of_points = Quantity(
+        type=int,
+        default=201,
+        description='Number of generated samples, from 2 to 1000.',
+        a_eln={
+            'component': 'NumberEditQuantity',
+            'minValue': MIN_PLOT_POINTS,
+            'maxValue': MAX_PLOT_POINTS,
+        },
+    )
+    x = Quantity(
+        type=np.float64,
+        shape=['*'],
+        description='Generated positions from 0 to 1, regenerated during processing.',
+    )
+    signal = Quantity(
+        type=np.float64,
+        shape=['*'],
+        description='Generated amplitude * sin(2 * pi * cycles * x).',
+    )
+    cosine = Quantity(
+        type=np.float64,
+        shape=['*'],
+        description='Generated amplitude * cos(2 * pi * cycles * x).',
+    )
+    sample_labels = Quantity(
+        type=str,
+        shape=['*'],
+        description='Sample names for the categorical bar chart.',
+    )
+    sample_counts = Quantity(
+        type=int,
+        shape=['*'],
+        description='Example measurement counts for each sample.',
+    )
+    grid_axis = Quantity(
+        type=np.float64,
+        shape=['*'],
+        description='Positions for matrix plots, capped at 41 samples per axis.',
+    )
+    wave_grid = Quantity(
+        type=np.float64,
+        shape=['*', '*'],
+        description='Generated 2D sine/cosine product for heatmap and contour.',
+    )
+
+    def normalize(self, archive, logger):
+        if not MIN_PLOT_POINTS <= self.number_of_points <= MAX_PLOT_POINTS:
+            raise ValueError('number_of_points must be between 2 and 1000')
+        if not np.isfinite(self.amplitude) or not np.isfinite(self.cycles):
+            raise ValueError('amplitude and cycles must be finite')
+
+        self.x = np.linspace(0.0, 1.0, self.number_of_points)
+        self.signal = self.amplitude * np.sin(2 * np.pi * self.cycles * self.x)
+        self.cosine = self.amplitude * np.cos(2 * np.pi * self.cycles * self.x)
+        self.sample_labels = [
+            'Sample A',
+            'Sample B',
+            'Sample C',
+            'Sample D',
+            'Sample E',
+        ]
+        self.sample_counts = [12, 19, 8, 15, 23]
+        self.grid_axis = np.linspace(
+            0.0, 1.0, min(self.number_of_points, MAX_GRID_POINTS)
+        )
+        phase = 2 * np.pi * self.cycles * self.grid_axis
+        self.wave_grid = self.amplitude * np.outer(np.sin(phase), np.cos(phase))
+
+        # Generate the figure after updating the referenced arrays.
+        super().normalize(archive, logger)
 
 
 m_package.__init_metainfo__()
