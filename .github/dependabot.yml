@@ -8,9 +8,13 @@ version: 2
 updates:
  - package-ecosystem: "devcontainers"
    directory: "/"
+   cooldown:
+     default-days: 7 # Dependabot defaults to 3 days; zizmor requires at least 7.
    schedule:
      interval: weekly
  - package-ecosystem: "github-actions"
    directory: "/"
+   cooldown:
+     default-days: 7 # Dependabot defaults to 3 days; zizmor requires at least 7.
    schedule:
      interval: weekly
