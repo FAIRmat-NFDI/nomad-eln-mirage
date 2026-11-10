@@ -2,6 +2,9 @@ name: install-and-test-workflow
 
 on: [push]
 
+permissions:
+  contents: read
+
 env:
   UV_VERSION: 0.9
   PYTHON_VERSION: 3.12
