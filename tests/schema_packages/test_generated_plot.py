@@ -22,11 +22,21 @@ EXPECTED_PLOT_LABELS = [
     'Express scatter',
     'Express multiple traces',
     'Annotated subplots',
+    'Python Express line',
+    'Python graph object scatter',
 ]
 
 
 def assert_gallery_labels(data):
     assert [figure.label for figure in data.figures] == EXPECTED_PLOT_LABELS
+    # Python figures embed the current samples, including after reprocessing.
+    line, scatter = data.figures[-2:]
+    np.testing.assert_allclose(line.figure['data'][0]['x'], data.x)
+    np.testing.assert_allclose(line.figure['data'][0]['y'], data.signal)
+    trace = scatter.figure['data'][0]
+    np.testing.assert_allclose(trace['x'], data.x)
+    np.testing.assert_allclose(trace['y'], data.cosine)
+    assert trace['mode'] == 'markers'
 
 
 def test_processing_generates_data_and_plot():

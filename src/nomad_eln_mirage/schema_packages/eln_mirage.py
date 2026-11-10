@@ -18,10 +18,12 @@
 
 
 import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
 from nomad.datamodel.data import Author, EntryData, User
 from nomad.datamodel.hdf5 import HDF5Reference
 from nomad.datamodel.metainfo.basesections import BaseSection
-from nomad.datamodel.metainfo.plot import PlotSection
+from nomad.datamodel.metainfo.plot import PlotlyFigure, PlotSection
 from nomad.metainfo import (
     Datetime,
     MEnum,
@@ -396,8 +398,36 @@ class ELNMiragePlot(PlotSection, EntryData):
         phase = 2 * np.pi * self.cycles * self.grid_axis
         self.wave_grid = self.amplitude * np.outer(np.sin(phase), np.cos(phase))
 
-        # Generate the figure after updating the referenced arrays.
+        # Generate annotated figures after updating the referenced arrays. This also
+        # replaces the previous gallery, so append Python figures after this call.
         super().normalize(archive, logger)
+
+        # Plotly Express builds a figure directly from the generated quantities.
+        line = px.line(
+            x=self.x,
+            y=self.signal,
+            labels={'x': 'Normalized position', 'y': 'Signal'},
+            title='Python Plotly Express line',
+            markers=True,
+        )
+        self.figures.append(
+            PlotlyFigure(label='Python Express line', figure=line.to_plotly_json())
+        )
+
+        # Graph objects allow explicit control over the scatter markers.
+        scatter = go.Figure(
+            data=[go.Scatter(x=self.x, y=self.cosine, mode='markers', name='Cosine')]
+        )
+        scatter.update_layout(
+            title_text='Python graph object scatter',
+            xaxis_title='Normalized position',
+            yaxis_title='Signal',
+        )
+        self.figures.append(
+            PlotlyFigure(
+                label='Python graph object scatter', figure=scatter.to_plotly_json()
+            )
+        )
 
 
 m_package.__init_metainfo__()
