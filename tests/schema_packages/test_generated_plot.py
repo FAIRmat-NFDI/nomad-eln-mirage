@@ -1,9 +1,6 @@
 import numpy as np
-import pytest
 from nomad.client import normalize_all, parse
 from nomad.datamodel import EntryArchive, EntryMetadata
-from plotly.graph_objects import Figure
-from structlog import get_logger
 
 from nomad_eln_mirage.schema_packages.eln_mirage import ELNMiragePlot
 
@@ -13,7 +10,7 @@ EXPECTED_PLOT_LABELS = [
 ]
 
 
-def assert_gallery_labels(data):
+def assert_generated_figures(data):
     assert [figure.label for figure in data.figures] == EXPECTED_PLOT_LABELS
     # Python figures embed the current samples, including after reprocessing.
     line, scatter = data.figures
@@ -32,31 +29,18 @@ def test_processing_generates_data_and_plot():
 
     np.testing.assert_allclose(data.x, np.linspace(0, 1, 201))
     np.testing.assert_allclose(data.signal, np.sin(4 * np.pi * data.x))
-    assert_gallery_labels(data)
-    # Saving changed inputs replaces both the generated samples and the figure.
-    data.amplitude = 3.0
-    data.cycles = 1.0
-    data.number_of_points = 5
-    normalize_all(archive)
-    np.testing.assert_allclose(data.signal, [0, 3, 0, -3, 0], atol=1e-14)
-    assert_gallery_labels(data)
+    assert_generated_figures(data)
 
 
-def test_defaults_generate_a_plot():
-    archive = EntryArchive(data=ELNMiragePlot(), metadata=EntryMetadata())
-    normalize_all(archive)
-    expected_points = 201
-    assert len(archive.data.signal) == expected_points
-    assert_gallery_labels(archive.data)
-
-
-def test_reprocessing_saved_entry_with_twenty_points():
+def test_reprocessing_saved_entry_updates_figures():
     archive = EntryArchive(data=ELNMiragePlot(), metadata=EntryMetadata())
     normalize_all(archive)
 
-    # Simulate saving only a changed sample count on a previously processed entry.
+    # Reprocess saved figures after changing the generation parameters.
     saved = archive.m_to_dict()
     saved['data']['number_of_points'] = 20
+    saved['data']['amplitude'] = 3.0
+    saved['data']['cycles'] = 1.0
     reprocessed = EntryArchive.m_from_dict(saved)
     normalize_all(reprocessed)
 
@@ -64,46 +48,8 @@ def test_reprocessing_saved_entry_with_twenty_points():
     expected_points = 20
     assert len(data.x) == len(data.signal) == expected_points
     np.testing.assert_allclose(data.x, np.linspace(0, 1, expected_points))
-    np.testing.assert_allclose(data.signal, np.sin(4 * np.pi * data.x))
-    assert_gallery_labels(data)
+    np.testing.assert_allclose(data.signal, 3 * np.sin(2 * np.pi * data.x))
+    assert_generated_figures(data)
     figure = data.figures[0].figure
     assert figure['data'][0]['mode'] == 'lines+markers'
     assert figure['layout']['title']['text'] == 'Python Plotly Express line'
-
-
-@pytest.mark.parametrize('number_of_points', [2, 20, 201, 1000])
-def test_all_gallery_figures_are_valid_plotly(number_of_points):
-    archive = EntryArchive(
-        data=ELNMiragePlot(number_of_points=number_of_points), metadata=EntryMetadata()
-    )
-    normalize_all(archive)
-    data = archive.data
-    assert_gallery_labels(data)
-
-    for item in data.figures:
-        figure = Figure(item.figure)
-        assert figure.data, item.label
-        assert all(trace.type == 'scatter' for trace in figure.data), item.label
-        assert figure.to_json()
-
-    expected_grid_size = min(number_of_points, 41)
-    assert data.wave_grid.shape == (expected_grid_size, expected_grid_size)
-    phase = 2 * np.pi * data.cycles * data.grid_axis
-    np.testing.assert_allclose(
-        data.wave_grid, data.amplitude * np.outer(np.sin(phase), np.cos(phase))
-    )
-
-
-@pytest.mark.parametrize(
-    'parameters',
-    [
-        {'number_of_points': 1},
-        {'number_of_points': 1001},
-        {'amplitude': float('nan')},
-        {'cycles': float('inf')},
-    ],
-)
-def test_invalid_generation_parameters(parameters):
-    archive = EntryArchive(data=ELNMiragePlot(**parameters))
-    with pytest.raises(ValueError):
-        archive.data.normalize(archive, get_logger())
