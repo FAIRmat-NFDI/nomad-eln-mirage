@@ -17,9 +17,13 @@
 #
 
 
+import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
 from nomad.datamodel.data import Author, EntryData, User
 from nomad.datamodel.hdf5 import HDF5Reference
 from nomad.datamodel.metainfo.basesections import BaseSection
+from nomad.datamodel.metainfo.plot import PlotlyFigure, PlotSection
 from nomad.metainfo import (
     Datetime,
     MEnum,
@@ -31,6 +35,10 @@ from nomad.metainfo import (
 )
 
 m_package = Package(name='ELN Mirage')
+
+MIN_PLOT_POINTS = 2
+MAX_PLOT_POINTS = 1000
+MAX_GRID_POINTS = 41
 
 
 class ELNMiragePlainQuantities(EntryData):
@@ -187,6 +195,124 @@ class ELNMirage(EntryData):
         description='Edit author',
         a_eln={'component': 'AuthorEditQuantity'},
     )
+
+
+class ELNMiragePlot(PlotSection, EntryData):
+    """Generate a gallery demonstrating Python-defined plots during processing."""
+
+    m_def = Section(label='ELN Mirage Plot')
+
+    amplitude = Quantity(
+        type=float,
+        default=1.0,
+        description='Amplitude of the generated sine wave.',
+        a_eln={'component': 'NumberEditQuantity'},
+    )
+    cycles = Quantity(
+        type=float,
+        default=2.0,
+        description='Number of sine wave cycles across the plotted interval.',
+        a_eln={'component': 'NumberEditQuantity'},
+    )
+    number_of_points = Quantity(
+        type=int,
+        default=201,
+        description='Number of generated samples, from 2 to 1000.',
+        a_eln={
+            'component': 'NumberEditQuantity',
+            'minValue': MIN_PLOT_POINTS,
+            'maxValue': MAX_PLOT_POINTS,
+        },
+    )
+    x = Quantity(
+        type=np.float64,
+        shape=['*'],
+        description='Generated positions from 0 to 1, regenerated during processing.',
+    )
+    signal = Quantity(
+        type=np.float64,
+        shape=['*'],
+        description='Generated amplitude * sin(2 * pi * cycles * x).',
+    )
+    cosine = Quantity(
+        type=np.float64,
+        shape=['*'],
+        description='Generated amplitude * cos(2 * pi * cycles * x).',
+    )
+    sample_labels = Quantity(
+        type=str,
+        shape=['*'],
+        description='Sample names for the categorical bar chart.',
+    )
+    sample_counts = Quantity(
+        type=int,
+        shape=['*'],
+        description='Example measurement counts for each sample.',
+    )
+    grid_axis = Quantity(
+        type=np.float64,
+        shape=['*'],
+        description='Positions for matrix plots, capped at 41 samples per axis.',
+    )
+    wave_grid = Quantity(
+        type=np.float64,
+        shape=['*', '*'],
+        description='Generated 2D sine/cosine product for heatmap and contour.',
+    )
+
+    def normalize(self, archive, logger):
+        if not MIN_PLOT_POINTS <= self.number_of_points <= MAX_PLOT_POINTS:
+            raise ValueError('number_of_points must be between 2 and 1000')
+        if not np.isfinite(self.amplitude) or not np.isfinite(self.cycles):
+            raise ValueError('amplitude and cycles must be finite')
+
+        self.x = np.linspace(0.0, 1.0, self.number_of_points)
+        self.signal = self.amplitude * np.sin(2 * np.pi * self.cycles * self.x)
+        self.cosine = self.amplitude * np.cos(2 * np.pi * self.cycles * self.x)
+        self.sample_labels = [
+            'Sample A',
+            'Sample B',
+            'Sample C',
+            'Sample D',
+            'Sample E',
+        ]
+        self.sample_counts = [12, 19, 8, 15, 23]
+        self.grid_axis = np.linspace(
+            0.0, 1.0, min(self.number_of_points, MAX_GRID_POINTS)
+        )
+        phase = 2 * np.pi * self.cycles * self.grid_axis
+        self.wave_grid = self.amplitude * np.outer(np.sin(phase), np.cos(phase))
+
+        super().normalize(archive, logger)
+        # Replace saved figures with plots built from the current samples.
+        self.figures = []
+
+        # Plotly Express builds a figure directly from the generated quantities.
+        line = px.line(
+            x=self.x,
+            y=self.signal,
+            labels={'x': 'Normalized position', 'y': 'Signal'},
+            title='Python Plotly Express line',
+            markers=True,
+        )
+        self.figures.append(
+            PlotlyFigure(label='Python Express line', figure=line.to_plotly_json())
+        )
+
+        # Graph objects allow explicit control over the scatter markers.
+        scatter = go.Figure(
+            data=[go.Scatter(x=self.x, y=self.cosine, mode='markers', name='Cosine')]
+        )
+        scatter.update_layout(
+            title_text='Python graph object scatter',
+            xaxis_title='Normalized position',
+            yaxis_title='Signal',
+        )
+        self.figures.append(
+            PlotlyFigure(
+                label='Python graph object scatter', figure=scatter.to_plotly_json()
+            )
+        )
 
 
 m_package.__init_metainfo__()
