@@ -200,122 +200,7 @@ class ELNMirage(EntryData):
 class ELNMiragePlot(PlotSection, EntryData):
     """Generate a gallery demonstrating Python-defined plots during processing."""
 
-    m_def = Section(
-        label='ELN Mirage Plot',
-        a_plotly_graph_object=[
-            {
-                'label': 'Generated sine wave',
-                'open': True,
-                'data': {
-                    'type': 'scatter',
-                    'mode': 'lines+markers',
-                    'x': '#x',
-                    'y': '#signal',
-                },
-                'layout': {
-                    'title': {'text': 'Generated sine wave'},
-                    'xaxis': {'title': {'text': 'Normalized position'}},
-                    'yaxis': {'title': {'text': 'Signal'}},
-                },
-            },
-            {
-                'label': 'Scatter with color',
-                'data': {
-                    'type': 'scatter',
-                    'mode': 'markers',
-                    'x': '#x',
-                    'y': '#signal',
-                    'marker': {
-                        'color': '#cosine',
-                        'colorscale': 'Viridis',
-                        'showscale': True,
-                    },
-                },
-            },
-            {
-                'label': 'Bar chart',
-                'data': {'type': 'bar', 'x': '#sample_labels', 'y': '#sample_counts'},
-                'layout': {
-                    'title': {'text': 'Measurements per sample'},
-                    'xaxis': {'title': {'text': 'Sample'}},
-                    'yaxis': {'title': {'text': 'Measurement count'}},
-                },
-            },
-            {
-                'label': 'Filled area',
-                'data': {
-                    'type': 'scatter',
-                    'mode': 'lines',
-                    'x': '#x',
-                    'y': '#signal',
-                    'fill': 'tozeroy',
-                },
-            },
-            {
-                'label': 'Histogram',
-                'data': {'type': 'histogram', 'x': '#signal', 'nbinsx': 20},
-            },
-            {
-                'label': 'Box plot',
-                'data': {'type': 'box', 'y': '#signal', 'boxpoints': 'all'},
-            },
-            {
-                'label': 'Violin plot',
-                'data': {
-                    'type': 'violin',
-                    'y': '#signal',
-                    'box': {'visible': True},
-                    'points': 'all',
-                },
-            },
-            {
-                'label': 'Heatmap',
-                'data': {
-                    'type': 'heatmap',
-                    'x': '#grid_axis',
-                    'y': '#grid_axis',
-                    'z': '#wave_grid',
-                    'colorscale': 'Viridis',
-                },
-            },
-            {
-                'label': 'Contour',
-                'data': {
-                    'type': 'contour',
-                    'x': '#grid_axis',
-                    'y': '#grid_axis',
-                    'z': '#wave_grid',
-                    'colorscale': 'Viridis',
-                },
-            },
-        ],
-        a_plotly_express=[
-            {
-                'label': 'Express scatter',
-                'method': 'scatter',
-                'x': '#x',
-                'y': '#signal',
-                'color': '#cosine',
-            },
-            {
-                'label': 'Express multiple traces',
-                'method': 'line',
-                'x': '#x',
-                'y': '#signal',
-                'traces': [{'method': 'line', 'x': '#x', 'y': '#cosine'}],
-            },
-        ],
-        a_plotly_subplots=[
-            {
-                'label': 'Annotated subplots',
-                'parameters': {'rows': 1, 'cols': 2},
-                'plotly_express': [
-                    {'method': 'line', 'x': '#x', 'y': '#signal'},
-                    {'method': 'scatter', 'x': '#x', 'y': '#cosine'},
-                ],
-            },
-        ],
-    )
+    m_def = Section(label='ELN Mirage Plot')
 
     amplitude = Quantity(
         type=float,
@@ -398,9 +283,9 @@ class ELNMiragePlot(PlotSection, EntryData):
         phase = 2 * np.pi * self.cycles * self.grid_axis
         self.wave_grid = self.amplitude * np.outer(np.sin(phase), np.cos(phase))
 
-        # Generate annotated figures after updating the referenced arrays. This also
-        # replaces the previous gallery, so append Python figures after this call.
         super().normalize(archive, logger)
+        # Replace saved figures with plots built from the current samples.
+        self.figures = []
 
         # Plotly Express builds a figure directly from the generated quantities.
         line = px.line(
