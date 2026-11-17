@@ -1,0 +1,5 @@
+data:
+  m_def: nomad_eln_mirage.schema_packages.eln_mirage.ELNMiragePlot
+  amplitude: 1.0
+  cycles: 2.0
+  number_of_points: 201
