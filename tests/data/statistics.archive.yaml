@@ -1,0 +1,3 @@
+data:
+  m_def: nomad_eln_mirage.schema_packages.eln_mirage.ELNMirageStatistics
+  statistics_array: [1, 2, 9]

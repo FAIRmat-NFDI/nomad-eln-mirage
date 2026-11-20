@@ -68,3 +68,16 @@ def test_edit_quantities(filename: str, expected: dict):
     data = entry_archive.data
     for key, expected_value in expected.items():
         assert getattr(data, key) == expected_value
+
+
+def test_statistics():
+    entry_archive = get_archive('statistics.archive.yaml')
+    data = entry_archive.data
+    assert data.m_get_statistics('statistics_array') == pytest.approx(
+        dict(mean=4, min=1, max=9, count=3)
+    )
+    # the normalizer sets the value and the statistics are computed afterwards
+    assert data.normalized_array.shape == (2, 3, 4)
+    assert data.m_get_statistics('normalized_array') == pytest.approx(
+        dict(mean=11.5, std=(575 / 12) ** 0.5, min=0, max=23, count=24)
+    )

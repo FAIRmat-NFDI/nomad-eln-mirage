@@ -68,6 +68,56 @@ class ELNMirageNamedSection(BaseSection, EntryData):
     m_def = Section()
 
 
+class ELNMirageStatistics(EntryData):
+    """
+    Array quantities with statistics, see the `statistics` annotation.
+    """
+
+    m_def = Section()
+
+    # The value is set by the normalizer below. The statistics are computed after the
+    # section was normalized, so both are present on the first load.
+    normalized_array = Quantity(
+        type=np.float64,
+        shape=['*', '*', '*'],
+        unit='m',
+        description='Three-dimensional array set by the normalizer with statistics',
+        a_statistics={},
+    )
+
+    # The statistics are computed from the referenced dataset whenever the entry is
+    # processed, e.g. after the reference was set and saved in the gui.
+    edit_hdf5_reference_with_statistics = Quantity(
+        type=HDF5Reference,
+        unit='m',
+        description='Edit HDF5 reference with automatically computed statistics',
+        # Without a list of statistics, mean, std, min, max, and count are computed.
+        a_statistics={},
+    )
+    # Custom list of statistics to compute, with explicitly allowing the statistics to be
+    # edited in the ELN
+    edit_manual_statistics = Quantity(
+        type=np.float64,
+        shape=['*'],
+        unit='K',
+        description='Array with manually edited statistics',
+        a_statistics={'mode': 'manual', 'statistics': ['mean', 'max']},
+        a_eln={'statistics_editable': True},
+    )
+    statistics_array = Quantity(
+        type=np.float64,
+        shape=['*'],
+        unit='m',
+        description='Array with automatically computed statistics',
+        a_statistics={'statistics': ['mean', 'min', 'max', 'count']},
+    )
+
+    def normalize(self, archive, logger):
+        super().normalize(archive, logger)
+        if self.normalized_array is None:
+            self.normalized_array = np.arange(24, dtype=np.float64).reshape(2, 3, 4)
+
+
 class ELNMirage(EntryData):
     """
     ELN Mirage
