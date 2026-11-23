@@ -125,6 +125,7 @@ where = ["src"]
 [project.entry-points.'nomad.plugin']
 
 eln_mirage = "nomad_eln_mirage.schema_packages:eln_mirage"
+eln_mirage_app = "nomad_eln_mirage.apps:eln_mirage_app"
 
 
 
